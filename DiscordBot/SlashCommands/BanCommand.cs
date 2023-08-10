@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data;
+using DSharpPlus.Exceptions;
 
 namespace DiscordBot.SlashCommands
 {
@@ -15,22 +16,65 @@ namespace DiscordBot.SlashCommands
     {
         #region [Ban]
 
-        [SlashCommand("ban", "Bans a user")]
+        [SlashCommand("ban", "Ban a user.")]
         [SlashRequirePermissions(Permissions.BanMembers)]
-        public async Task Ban(InteractionContext ctx, [Option("User", "User to ban")] DiscordUser user, [Option("Reason", "Reason for banning a user from this server")] string reason,
+        public static async Task Ban(InteractionContext ctx,
+            [Option("user", "The user to ban.")] DiscordUser user,
+            [Option("reason", "The reason for the ban.")][MaximumLength(1500)] string reason = "No reason provided.",
             [Choice("1 День", 1)]
             [Choice("1 Неделя", 7)]
-            [Option("deletedays", "Number of days of message history to delete")] long deleteDays = 0)
+            [Option("deletedays", "Number of days of message history to delete.")] long deleteDays = 0)
         {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember member;
             try
             {
-                await ctx.Guild.BanMemberAsync(user.Id, (int)deleteDays);
-                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"{user.Username} has been banned from this server. Reason: {reason}"));
+                member = await ctx.Guild.GetMemberAsync(user.Id);
             }
-            catch (Exception ex) { Console.ForegroundColor = ConsoleColor.Red; Console.WriteLine($"{DateTime.Now} | {ex.Message}."); Console.ResetColor(); }
-        }
+            catch
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Hmm. It doesn't look like this user is on the server, so I can't ban him."
+                }));
+
+                return;
+            }           
+
+            try
+            {
+                await ctx.Guild.BanMemberAsync(member, (int)deleteDays, reason);
+            }
+            catch(UnauthorizedException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = $"Something went wrong. You or I may not be allowed to ban **{member.Username}**! Please check the role hierarchy and permissions."
+                }));
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = $"Hmm, something went wrong while trying to ban that user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                }));
+
+                return;
+            }
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+            {
+                Color = DiscordColor.Green,
+                Description = $"**{user.Username}** has been banned from this server. Reason: {reason}"
+            }));                
+        }   
 
         #endregion
-
     }
 }

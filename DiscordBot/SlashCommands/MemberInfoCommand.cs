@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.Data;
 
 namespace DiscordBot.SlashCommands
 {
@@ -15,63 +16,70 @@ namespace DiscordBot.SlashCommands
     {
         #region [MemberInfo]
 
-        [SlashCommand("members_info", "Shows some interesting information about a member")]
-        [SlashRequirePermissions(Permissions.Administrator)]
-        public async Task MemberInfo(InteractionContext ctx, [Option("user", "user")] DiscordUser user)
+        [SlashCommand("member_info", "Shows some interesting information about a member")]
+        public static async Task MemberInfo(InteractionContext ctx, [Option("User", "User")] DiscordUser user)
         {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember member;
             try
             {
-                await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-
-                DiscordMember member = (DiscordMember)user;
-
-                Optional<DiscordColor> color;
-
-                if(member.BannerColor == null)
+                member = await ctx.Guild.GetMemberAsync(user.Id);
+            }
+            catch
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
-                    color = DiscordColor.Blurple;
-                }
-                else
-                {
-                    color = (Optional<DiscordColor>)member.BannerColor;
-                }
-
-                Console.WriteLine(member.Nickname);
-                string roles = "";
-
-                IEnumerable<DiscordRole> discordRoles = member.Roles;
-                discordRoles = discordRoles.Reverse();
-
-                if (!discordRoles.Any())
-                {
-                    roles = "No roles";
-                }
-                else
-                {
-                    int index = 0;
-                    foreach (var role in discordRoles)
-                    {
-                        if (index % 2 == 0 && index != 0)
-                        {
-                            roles += "\n";
-                        }
-                        roles += $" {role.Mention}";
-                        index++;
-                    }
-                }
-
-                await ctx.Client.SendMessageAsync(ctx.Channel, new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                {
-                    Color = color,
-                    Title = member.Username,
-                    ImageUrl = member.AvatarUrl,
-                    Description = $"**Roles:** \n{roles}\n\n**Display name:** {member.DisplayName}\n\n**Created at:** {member.CreationTimestamp.LocalDateTime}\n\n**Joined at:** {member.JoinedAt.LocalDateTime}"
-
+                    Color = DiscordColor.Red,
+                    Description = "Hmm. It doesn't look like this user is on the server, so I can't get information about him."
                 }));
 
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Success!"));
+                return;
             }
-            catch (Exception ex) { Console.ForegroundColor = ConsoleColor.Red; Console.WriteLine($"{DateTime.Now} | {ex.Message}."); Console.ResetColor(); }
+
+            Optional<DiscordColor> color;
+
+            if(member.BannerColor == null)
+                color = DiscordColor.Blurple;
+            else
+                color = (Optional<DiscordColor>)member.BannerColor;
+
+            string roles = "";
+
+            IEnumerable<DiscordRole> discordRoles = member.Roles;
+
+            if (!discordRoles.Any())
+                    roles = "No roles";
+            else
+            {
+                discordRoles = discordRoles.Reverse();
+
+                int index = 0;
+                foreach (var role in discordRoles)
+                {
+                    if (index % 2 == 0 && index != 0)
+                    {
+                        roles += "\n";
+                    }
+                    roles += $" {role.Mention}";
+                    index++;
+                }
+            }
+
+            var embed = new DiscordEmbedBuilder()
+            {
+                Color = color,
+                Title = "Member info",
+                ImageUrl = member.AvatarUrl,
+                Footer = new() { Text = $"Id: {member.Id}" }
+            };
+
+            embed.AddField("Name", $"{member.Username}");
+            embed.AddField("Roles", $"{roles}");
+            embed.AddField("Created at", $"{member.CreationTimestamp.LocalDateTime}");
+            embed.AddField("Joined At", $"{member.JoinedAt.LocalDateTime}");
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
         }
 
         #endregion

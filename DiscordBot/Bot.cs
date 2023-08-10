@@ -62,9 +62,11 @@ namespace DiscordBot
             SlashCommands.RegisterCommands<KickCommand>();
             SlashCommands.RegisterCommands<BanCommand>();
             SlashCommands.RegisterCommands<TimeoutCommand>();
-            SlashCommands.RegisterCommands<SetRoleCommand>();
+            SlashCommands.RegisterCommands<RoleAddCommand>();
             SlashCommands.RegisterCommands<MemberInfoCommand>();
-            SlashCommands.RegisterCommands<RemoveRoleCommand>();
+            SlashCommands.RegisterCommands<RoleRemoveCommand>();
+            SlashCommands.RegisterCommands<RoleInfoCommand>();
+            //SlashCommands.RegisterCommands<RoleCreateCommand>(); // пока что не буду регистрировать эту, по причине ее ненужности
 
             //Client.MessageCreated += Client_MessageCreated;
             Client.Ready += OnClientReady;
@@ -90,21 +92,6 @@ namespace DiscordBot
         //    }
 
         //    return Task.CompletedTask;
-        //}
-
-        //private async Task<string> GetToken(string path)
-        //{
-        //    string result = "";
-
-        //    using (StreamReader reader = new StreamReader(path))
-        //    {
-        //        string? line;
-
-        //        if ((line = await reader.ReadLineAsync()) != null)
-        //            result = line;
-        //    }
-
-        //    return result;
         //}
     }
 }

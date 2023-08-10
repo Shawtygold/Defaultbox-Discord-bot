@@ -18,12 +18,5 @@ namespace DiscordBot.Commands
             Random rnd = new();
             await ctx.Channel.SendMessageAsync("Тебе выпало: " + sidesСoin[rnd.Next(0, sidesСoin.Length)]);
         }
-
-        [Command("random")]
-        public async Task RandomCommand(CommandContext ctx, int from, int to)
-        {
-            var random = new Random();
-            await ctx.Channel.SendMessageAsync($"Рандомное число: {random.Next(from, to)}");
-        }
     }
 }
