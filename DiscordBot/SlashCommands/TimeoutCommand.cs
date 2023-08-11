@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System;
@@ -48,7 +49,7 @@ namespace DiscordBot.SlashCommands
                 DateTimeOffset.Now.LocalDateTime.AddMinutes(10),
                 DateTimeOffset.Now.LocalDateTime.AddMinutes(30),
                 DateTimeOffset.Now.LocalDateTime.AddHours(1),
-                DateTimeOffset.Now.LocalDateTime.AddDays(1) 
+                DateTimeOffset.Now.LocalDateTime.AddDays(1)
             };
 
             List<string> times = new()
@@ -65,6 +66,14 @@ namespace DiscordBot.SlashCommands
             {
                 await member.TimeoutAsync(dateTimeOffsets[(int)time], reason);
             }
+            catch(UnauthorizedException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = $"Something went wrong. You or I may not be allowed to timeout **{member.Username}**! Please check the role hierarchy and permissions."
+                }));
+            }
             catch (Exception ex)
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
@@ -75,7 +84,6 @@ namespace DiscordBot.SlashCommands
 
                 return;
             }
-
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
             {

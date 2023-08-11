@@ -138,7 +138,7 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = "Hmm. It doesn't look like this user is on the server, so I can't ban him."
+                    Description = "Hmm. It doesn't look like this user is on the server."
                 }));
 
                 return;
@@ -167,7 +167,7 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = "Hmm. It doesn't look like this user is on the server, so I can't ban him."
+                    Description = "Hmm. It doesn't look like this user is on the server."
                 }));
 
                 return;
@@ -316,7 +316,7 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"something went wrong while trying to remove the role from this user. The specified role does not exist!"
+                            Description = $"Something went wrong while trying to remove the role from this user. The specified role does not exist!"
                         });
 
                         return;
@@ -341,6 +341,8 @@ namespace DiscordBot.SlashCommands
             {
                 if (optionEmojis[i] == userEmoji)
                 {
+                    if (!member.Roles.Contains(optionRoles[i]))
+                        return;
                     try
                     {
                         await member.RevokeRoleAsync(optionRoles[i]);
@@ -362,7 +364,7 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"something went wrong while trying to remove the role from this user. The specified role does not exist!"
+                            Description = $"Something went wrong while trying to remove the role from this user. The specified role does not exist!"
                         });
 
                         return;

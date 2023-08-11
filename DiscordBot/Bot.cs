@@ -66,6 +66,7 @@ namespace DiscordBot
             SlashCommands.RegisterCommands<MemberInfoCommand>();
             SlashCommands.RegisterCommands<RoleRemoveCommand>();
             SlashCommands.RegisterCommands<RoleInfoCommand>();
+            SlashCommands.RegisterCommands<UnbanCommand>();
             //SlashCommands.RegisterCommands<RoleCreateCommand>(); // пока что не буду регистрировать эту, по причине ее ненужности
 
             //Client.MessageCreated += Client_MessageCreated;
