@@ -16,8 +16,8 @@ namespace DiscordBot.SlashCommands
     {
         #region [MemberInfo]
 
-        [SlashCommand("member_info", "Shows some interesting information about a member")]
-        public static async Task MemberInfo(InteractionContext ctx, [Option("User", "User")] DiscordUser user)
+        [SlashCommand("member_info", "Shows some interesting information about a member.")]
+        public static async Task MemberInfo(InteractionContext ctx, [Option("user", "User information about which you want to get.")] DiscordUser user)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 

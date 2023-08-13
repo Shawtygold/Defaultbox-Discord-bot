@@ -1,18 +1,18 @@
 ﻿using DSharpPlus.Entities;
-using DSharpPlus;
-using DSharpPlus.SlashCommands;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.Attributes;
+using DSharpPlus.SlashCommands;
+using DSharpPlus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data;
-using DSharpPlus.Exceptions;
+using DSharpPlus.CommandsNext.Attributes;
 
 namespace DiscordBot.SlashCommands
 {
-    internal class BanCommand : ApplicationCommandModule
+    internal class BanCommands : ApplicationCommandModule
     {
         #region [Ban]
 
@@ -41,13 +41,13 @@ namespace DiscordBot.SlashCommands
                 }));
 
                 return;
-            }           
+            }
 
             try
             {
                 await ctx.Guild.BanMemberAsync(member, (int)deleteDays, reason);
             }
-            catch(UnauthorizedException)
+            catch (UnauthorizedException)
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
@@ -72,8 +72,51 @@ namespace DiscordBot.SlashCommands
             {
                 Color = DiscordColor.Green,
                 Description = $"**{user.Username}** has been banned from this server. Reason: {reason}"
-            }));                
-        }   
+            }));
+        }
+
+        #endregion
+
+        #region [Unban]
+
+        [SlashCommand("unban", "Unban a user.")]
+        [RequirePermissions(Permissions.BanMembers)]
+        public static async Task Unban(InteractionContext ctx,
+            [Option("user", "The user to unban.")] DiscordUser userToUnban)
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            try
+            {
+                await ctx.Guild.UnbanMemberAsync(userToUnban);
+            }
+            catch (UnauthorizedException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = $"Something went wrong. You or I may not be allowed to unban **{userToUnban.Username}**! Please check the role hierarchy and permissions."
+                }));
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = $"Hmm, something went wrong while trying to unban that user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                }));
+
+                return;
+            }
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+            {
+                Color = DiscordColor.Green,
+                Description = $"Successfully unbanned **{userToUnban.Username}**!"
+            }));
+        }
 
         #endregion
     }

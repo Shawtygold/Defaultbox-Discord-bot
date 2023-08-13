@@ -19,7 +19,7 @@ namespace DiscordBot.SlashCommands
     {
         #region [Poll]
 
-        [SlashCommand("poll", "Create poll")]
+        [SlashCommand("poll", "Create poll.")]
         [SlashRequirePermissions(Permissions.Administrator)]
         public static async Task Poll(InteractionContext ctx, [Option("question", "Poll question.")] string title, [Option("answers", "Answer options.")] string answers,
             [Choice("5 мин", 5)]

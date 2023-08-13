@@ -15,7 +15,7 @@ namespace DiscordBot.SlashCommands
     {
         #region [Kick]
 
-        [SlashCommand("kick", "Kick user from this server")]
+        [SlashCommand("kick", "Kick user from this server.")]
         [SlashRequirePermissions(Permissions.KickMembers)]
         public static async Task Kick(InteractionContext ctx,
             [Option("user", "The user to kick.")] DiscordUser user,

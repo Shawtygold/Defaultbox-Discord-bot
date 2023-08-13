@@ -60,14 +60,13 @@ namespace DiscordBot
             SlashCommands.RegisterCommands<CreateReactionRolesCommand>();
             SlashCommands.RegisterCommands<PollCommand>();
             SlashCommands.RegisterCommands<KickCommand>();
-            SlashCommands.RegisterCommands<BanCommand>();
+            SlashCommands.RegisterCommands<BanCommands>();
             SlashCommands.RegisterCommands<TimeoutCommand>();
-            SlashCommands.RegisterCommands<RoleAddCommand>();
+            //SlashCommands.RegisterCommands<RoleAddCommand>();
             SlashCommands.RegisterCommands<MemberInfoCommand>();
-            SlashCommands.RegisterCommands<RoleRemoveCommand>();
-            SlashCommands.RegisterCommands<RoleInfoCommand>();
-            SlashCommands.RegisterCommands<UnbanCommand>();
-            //SlashCommands.RegisterCommands<RoleCreateCommand>(); // пока что не буду регистрировать эту, по причине ее ненужности
+            //SlashCommands.RegisterCommands<RoleRemoveCommand>();
+            SlashCommands.RegisterCommands<RoleCommands>();
+            
 
             //Client.MessageCreated += Client_MessageCreated;
             Client.Ready += OnClientReady;
