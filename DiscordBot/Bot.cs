@@ -62,9 +62,7 @@ namespace DiscordBot
             SlashCommands.RegisterCommands<KickCommand>();
             SlashCommands.RegisterCommands<BanCommands>();
             SlashCommands.RegisterCommands<TimeoutCommand>();
-            //SlashCommands.RegisterCommands<RoleAddCommand>();
             SlashCommands.RegisterCommands<MemberInfoCommand>();
-            //SlashCommands.RegisterCommands<RoleRemoveCommand>();
             SlashCommands.RegisterCommands<RoleCommands>();
             
 
