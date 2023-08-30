@@ -1,14 +1,8 @@
-﻿using DSharpPlus.Entities;
+﻿using DiscordBot.Models;
 using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
-using System.Data;
 
 namespace DiscordBot.SlashCommands
 {
@@ -20,6 +14,31 @@ namespace DiscordBot.SlashCommands
         public static async Task MemberInfo(InteractionContext ctx, [Option("user", "User information about which you want to get.")] DiscordUser user)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember bot;
+            try
+            {
+                bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
+            }
+            catch (ServerErrorException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Server Error Exception. Please, try again or contact the developer."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AccessChannels }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "I don't have access to this channel! Please, check the permissions."
+                }));
+                return;
+            }
 
             DiscordMember member;
             try
@@ -33,7 +52,6 @@ namespace DiscordBot.SlashCommands
                     Color = DiscordColor.Red,
                     Description = "Hmm. It doesn't look like this user is on the server, so I can't get information about him."
                 }));
-
                 return;
             }
 

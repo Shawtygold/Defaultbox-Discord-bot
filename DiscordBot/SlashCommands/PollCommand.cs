@@ -1,17 +1,12 @@
-﻿using DSharpPlus.Entities;
-using DSharpPlus.Interactivity.Extensions;
+﻿using DiscordBot.Models;
 using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
+using DSharpPlus.Interactivity.EventHandling;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-using DSharpPlus.Interactivity.EventHandling;
-using DSharpPlus.Exceptions;
-using System.Diagnostics.Metrics;
 
 namespace DiscordBot.SlashCommands
 {
@@ -20,7 +15,6 @@ namespace DiscordBot.SlashCommands
         #region [Poll]
 
         [SlashCommand("poll", "Create poll.")]
-        [SlashRequirePermissions(Permissions.Administrator)]
         public static async Task Poll(InteractionContext ctx, [Option("question", "Poll question.")] string title, [Option("answers", "Answer options.")] string answers,
             [Choice("5 мин", 5)]
             [Choice("15 мин", 15)]
@@ -31,8 +25,52 @@ namespace DiscordBot.SlashCommands
             [Option("polling_time", "Polling time.") ] long pollTime,
             [Option("separator", "Separator.")] string separator = "|")
         {
+            if (!PermissionsManager.CheckPermissionsIn(ctx.Member, ctx.Channel, new() { Permissions.Administrator }) && !ctx.Member.IsOwner)
+            {
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Insufficient permissions. You need **Administrator** permission for this command."
+                });
+                return;
+            }
 
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember bot;
+            try
+            {
+                bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
+            }
+            catch (ServerErrorException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Server Error Exception. Please, try again or contact the developer."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AccessChannels }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "I don't have access to this channel! Please, check the permissions."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.SendMessages, Permissions.AddReactions, Permissions.ReadMessageHistory, Permissions.ManageMessages }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Maybe I'm not allowed to ssend messages, add reactions, read message history or manage messages. Please check the permissions."
+                }));
+                return;
+            }
 
             var interactivity = ctx.Client.GetInteractivity();
 
@@ -84,9 +122,8 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to send messages! Please check the role hierarchy and permissions."
+                    Description = $"Something went wrong. I may not be allowed to send messages! Please check the permissions."
                 }));
-
                 return;
             }
             catch (Exception ex)
@@ -94,9 +131,9 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;
             }
 
@@ -131,7 +168,7 @@ namespace DiscordBot.SlashCommands
 
             // нахождение варианта, который победил в опросе
             int maxValue = answerVotes.Max();
-            int index = answerVotes.IndexOf(maxValue); // если есть несколько вариантов с одинаковым количеством голосов, то в result пойдет вариант который по индексу первее
+            int index = answerVotes.IndexOf(maxValue);
             
             string resultDescription = "";
 
@@ -159,7 +196,7 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to delete messages! Please check the role hierarchy and permissions."
+                    Description = $"Something went wrong. I may not be allowed to manage messages! Please check the permissions."
                 }));
 
                 return;
@@ -171,7 +208,6 @@ namespace DiscordBot.SlashCommands
                     Color = DiscordColor.Red,
                     Description = $"Something went wrong. Poll message not found!"
                 }));
-
                 return;
             }
             catch (Exception ex)
@@ -179,9 +215,9 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong when trying to delete a poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong when trying to delete a poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;
             }
 
@@ -194,9 +230,8 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to send messages! Please check the role hierarchy and permissions."
+                    Description = $"Something went wrong. I may not be allowed to send messages! Please check the permissions."
                 }));
-
                 return;
             }
             catch (Exception ex)
@@ -204,9 +239,9 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;
             }
 

@@ -1,14 +1,8 @@
-﻿using DSharpPlus.Entities;
+﻿using DiscordBot.Models;
 using DSharpPlus;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
-using System.Diagnostics.Metrics;
+using DSharpPlus.SlashCommands;
 
 namespace DiscordBot.SlashCommands
 {
@@ -40,7 +34,6 @@ namespace DiscordBot.SlashCommands
         #region [Reaction Roles]
         
         [SlashCommand("create_reaction_roles", "Сreates a role addition when clicking on a reaction in a message.")]
-        [SlashRequirePermissions(Permissions.Administrator)]
         public async Task CreateReactionRoles(InteractionContext ctx,
             [Option("message_Id", "Id of the message you want to attach a reaction to.")] string messageId,
             [Choice("True", "True")]
@@ -57,10 +50,54 @@ namespace DiscordBot.SlashCommands
             [Option("emoji5", "Emoji")] DiscordEmoji? emoji5 = null,
             [Option("role5", "Role")] DiscordRole? role5 = null)
         {
-            this.ctx = ctx;
+            if (!PermissionsManager.CheckPermissionsIn(ctx.Member, ctx.Channel, new() { Permissions.Administrator }) && !ctx.Member.IsOwner)
+            {
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Insufficient permissions. You need **Administrator** permission for this command."
+                });
+                return;
+            }
 
-            await this.ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-            
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember bot;
+            try
+            {
+                bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
+            }
+            catch (ServerErrorException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Server Error Exception. Please, try again or contact the developer."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AccessChannels }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "I don't have access to this channel! Please, check the permissions."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AddReactions, Permissions.ManageRoles, Permissions.ManageMessages, Permissions.ReadMessageHistory }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Maybe I'm not allowed to add reactions, manage roles, manage messages or read message history. Please check the permissions."
+                }));
+                return;
+            }
+
+            this.ctx = ctx;
             this.uniqueRole = Convert.ToBoolean(uniqueRole);
 
             optionEmojis = new();
@@ -70,16 +107,15 @@ namespace DiscordBot.SlashCommands
             DiscordMessage message;
             try
             {
-                message = await ctx.Channel.GetMessageAsync((ulong)Convert.ToInt64(messageId));
+                message = await ctx.Channel.GetMessageAsync(Convert.ToUInt64(messageId));
             }
             catch(UnauthorizedException)
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to manage messages. Please check if you entered the correct message ID."
+                    Description = $"Something went wrong. Maybe I'm not allowed to read message history. Please check the permissions."
                 }));
-
                 return;
             }
             catch(NotFoundException)
@@ -87,9 +123,8 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong while trying to get a message by id. Please check if you entered the correct message ID."
+                    Description = $"Something went wrong while trying to get a message by id. Please check the message Id."
                 }));
-
                 return;
             }
             catch(Exception ex)
@@ -97,9 +132,9 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to get a message by id.\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to get a message by id.\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;
             }
 
@@ -198,7 +233,7 @@ namespace DiscordBot.SlashCommands
                                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                                 {
                                     Color = DiscordColor.Red,
-                                    Description = $"Something went wrong. You or I may not be allowed to delete reactions! Please check the role hierarchy and permissions."
+                                    Description = $"Something went wrong. I may not be allowed to delete reactions! Please check the permissions."
                                 }));
 
                                 return;
@@ -208,7 +243,7 @@ namespace DiscordBot.SlashCommands
                                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                                 {
                                     Color = DiscordColor.Red,
-                                    Description = $"Something went wrong when trying to delete a reaction to this message! Message not found!"
+                                    Description = $"Hmm, something went wrong when trying to delete the reaction from the message! Message not found!"
                                 }));
 
                                 return;
@@ -218,9 +253,9 @@ namespace DiscordBot.SlashCommands
                                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                                 {
                                     Color = DiscordColor.Red,
-                                    Description = $"Hmm, something went wrong when trying to delete a reaction to this message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                                    Description = $"Hmm, something went wrong when trying to delete the reaction from the message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                                 }));
-
+                                Logger.Error(ex.ToString());
                                 return;
                             }                              
                         }
@@ -260,9 +295,8 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to add reactions! Please check the role hierarchy and permissions."
+                    Description = $"Something went wrong. I may not be allowed to add reactions! Please check the permissions."
                 }));
-
                 return;
             }
             catch (NotFoundException)
@@ -270,19 +304,18 @@ namespace DiscordBot.SlashCommands
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong when trying to add a reaction to this message! Message not found!"
+                    Description = $"Something went wrong when trying to add a reaction to a message! Message not found!"
                 }));
-
                 return;
             }
-            catch (Exception e)
+            catch (Exception ex)
             { 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to add a reaction to this message!\n\nThis was Discord's response:\n> {e.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{e}\n```"
+                    Description = $"Hmm, something went wrong when trying to add a reaction to a message!!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;   
             }
         }
@@ -295,6 +328,7 @@ namespace DiscordBot.SlashCommands
                 {
                     if(member.Roles.Contains(optionRoles[i]))
                         return;
+
                     try
                     {
                         await member.GrantRoleAsync(optionRoles[i]);
@@ -306,9 +340,8 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"Something went wrong. You or I may not be allowed to remove the role **{member.Username}**! Please check the role hierarchy and permissions."
+                            Description = $"Something went wrong. I may not be allowed to add a role **{member.Username}**! Please check the permissions."
                         });                       
-
                         return;
                     }
                     catch (NotFoundException)
@@ -316,9 +349,8 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"Something went wrong while trying to remove the role from this user. The specified role does not exist!"
+                            Description = $"Something went wrong while trying to add a role to this user. Role not found!"
                         });
-
                         return;
                     }
                     catch (Exception ex)
@@ -326,9 +358,9 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"Hmm, something went wrong while trying to add a role to this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                            Description = $"Hmm, something went wrong while trying to add a role to this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                         });
-
+                        Logger.Error(ex.ToString());
                         return;
                     }
                 }
@@ -343,6 +375,7 @@ namespace DiscordBot.SlashCommands
                 {
                     if (!member.Roles.Contains(optionRoles[i]))
                         return;
+
                     try
                     {
                         await member.RevokeRoleAsync(optionRoles[i]);
@@ -354,9 +387,8 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"Something went wrong. You or I may not be allowed to remove the role **{member.Username}**! Please check the role hierarchy and permissions."
+                            Description = $"Something went wrong. I may not be allowed to remove the role from **{member.Username}**! Please check the permissions."
                         });                   
-
                         return;
                     }
                     catch(NotFoundException)
@@ -364,9 +396,8 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"Something went wrong while trying to remove the role from this user. The specified role does not exist!"
+                            Description = $"Something went wrong while trying to remove the role from this user. Role not found!"
                         });
-
                         return;
                     }
                     catch (Exception ex)
@@ -374,9 +405,9 @@ namespace DiscordBot.SlashCommands
                         await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder()
                         {
                             Color = DiscordColor.Red,
-                            Description = $"Hmm, something went wrong while trying to remove the role from this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                            Description = $"Hmm, something went wrong while trying to remove the role from this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                         });
-
+                        Logger.Error(ex.ToString());
                         return;
                     }
                 }

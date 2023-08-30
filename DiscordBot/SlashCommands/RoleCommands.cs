@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DiscordBot.Models;
 
 namespace DiscordBot.SlashCommands
 {
@@ -16,12 +17,56 @@ namespace DiscordBot.SlashCommands
         #region [Role Add]
 
         [SlashCommand("role_add", "Add role to user.")]
-        [SlashRequirePermissions(Permissions.Administrator)]
         public static async Task AddRole(InteractionContext ctx,
             [Option("user", "User to be assigned the role.")] DiscordUser user,
             [Option("role", "The role you wish to grant.")] DiscordRole role)
         {
+            if (!PermissionsManager.CheckPermissionsIn(ctx.Member, ctx.Channel, new() { Permissions.Administrator }) && !ctx.Member.IsOwner)
+            {
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Insufficient permissions. You need **Administrator** permission for this command."
+                });
+                return;
+            }
+
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember bot;
+            try
+            {
+                bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
+            }
+            catch (ServerErrorException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Server Error Exception. Please, try again or contact the developer."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AccessChannels }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "I don't have access to this channel! Please, check the permissions."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.ManageRoles }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Maybe I'm not allowed to manage roles. Please check the permissions."
+                }));
+                return;
+            }
 
             DiscordMember member;
             try
@@ -35,7 +80,6 @@ namespace DiscordBot.SlashCommands
                     Color = DiscordColor.Red,
                     Description = "Hmm. It doesn't look like this user is on the server, so I can't add a role to it."
                 }));
-
                 return;
             }
 
@@ -46,7 +90,6 @@ namespace DiscordBot.SlashCommands
                     Color = DiscordColor.Red,
                     Description = "The user already has this role!"
                 }));
-
                 return;
             }
 
@@ -59,9 +102,8 @@ namespace DiscordBot.SlashCommands
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to add the role **{member.Username}**! Please check the role hierarchy and permissions."
+                    Description = $"Something went wrong. I may not be allowed to add the role **{member.Username}**! Please check the role hierarchy and permissions."
                 }));
-
                 return;
             }
             catch (Exception ex)
@@ -69,9 +111,9 @@ namespace DiscordBot.SlashCommands
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to add a role to this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to add a role to this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;
             }
 
@@ -91,6 +133,41 @@ namespace DiscordBot.SlashCommands
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
+            DiscordMember bot;
+            try
+            {
+                bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
+            }
+            catch (ServerErrorException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Server Error Exception. Please, try again or contact the developer."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AccessChannels }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "I don't have access to this channel! Please, check the permissions."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.ManageRoles }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Maybe I'm not allowed to manage roles. Please check the permissions."
+                }));
+                return;
+            }
+
             int countMembersWithRole = 0;
 
             IEnumerable<DiscordMember> members;
@@ -99,14 +176,13 @@ namespace DiscordBot.SlashCommands
             {
                 members = await ctx.Guild.GetAllMembersAsync();
             }
-            catch (Exception ex)
+            catch (ServerErrorException)
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to get the members of this server!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = "Server Error Exception. Please, try again or contact the developer."
                 }));
-
                 return;
             }
 
@@ -132,9 +208,55 @@ namespace DiscordBot.SlashCommands
         #region [Role Remove]
 
         [SlashCommand("role_remove", "Remove role from user.")]
-        [SlashRequirePermissions(Permissions.Administrator)]
         public static async Task RemoveRole(InteractionContext ctx, [Option("user", "User to remove role.")] DiscordUser user, [Option("role", "The role you want to remove.")] DiscordRole role)
         {
+            if (!PermissionsManager.CheckPermissionsIn(ctx.Member, ctx.Channel, new() { Permissions.Administrator }) && !ctx.Member.IsOwner)
+            {
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Insufficient permissions. You need **Administrator** permission for this command."
+                });
+                return;
+            }
+
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            DiscordMember bot;
+            try
+            {
+                bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
+            }
+            catch (ServerErrorException)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Server Error Exception. Please, try again or contact the developer."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.AccessChannels }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "I don't have access to this channel! Please, check the permissions."
+                }));
+                return;
+            }
+
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.ManageRoles }))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Description = "Maybe I'm not allowed to manage roles. Please check the permissions."
+                }));
+                return;
+            }
+
             DiscordMember member;
             try
             {
@@ -147,7 +269,6 @@ namespace DiscordBot.SlashCommands
                     Color = DiscordColor.Red,
                     Description = "Hmm. It doesn't look like this user is on the server, so I can't remove the role from him."
                 }));
-
                 return;
             }
 
@@ -158,7 +279,6 @@ namespace DiscordBot.SlashCommands
                     Color = DiscordColor.Red,
                     Description = "User does not have this role!"
                 }));
-
                 return;
             }
 
@@ -171,9 +291,8 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. You or I may not be allowed to remove role from **{member.Username}**! Please check the role hierarchy and permissions."
+                    Description = $"Something went wrong. I may not be allowed to remove role from **{member.Username}**! Please check the role hierarchy and permissions."
                 }));
-
                 return;
             }
             catch (Exception ex)
@@ -181,9 +300,9 @@ namespace DiscordBot.SlashCommands
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to remove a role from this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to remove a role from this user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
                 }));
-
+                Logger.Error(ex.ToString());
                 return;
             }
 
