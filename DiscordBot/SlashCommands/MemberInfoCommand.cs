@@ -1,7 +1,6 @@
 ﻿using DiscordBot.Models;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 
 namespace DiscordBot.SlashCommands
@@ -20,12 +19,13 @@ namespace DiscordBot.SlashCommands
             {
                 bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
             }
-            catch (ServerErrorException)
+            catch
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = "Server Error Exception. Please, try again or contact the developer."
+                    Description = "Could not find myself on the server. Please try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
                 return;
             }
@@ -34,6 +34,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "I don't have access to this channel! Please, check the permissions."
                 }));
@@ -49,6 +50,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "Hmm. It doesn't look like this user is on the server, so I can't get information about him."
                 }));

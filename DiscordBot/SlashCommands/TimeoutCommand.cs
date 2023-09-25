@@ -3,13 +3,6 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DiscordBot.SlashCommands
 {
@@ -17,7 +10,7 @@ namespace DiscordBot.SlashCommands
     {
         #region [Timeout]
 
-        [SlashCommand("timeout", "Send the user to think about their behavior.")]
+        [SlashCommand("timeout", "Sends the user to think about their behavior.")]
         public static async Task Timeout(InteractionContext ctx, [Option("user", "User to timeout.")] DiscordUser user, 
             [Choice("60 seconds", 0)]
             [Choice("5 minutes", 1)]
@@ -34,7 +27,7 @@ namespace DiscordBot.SlashCommands
                 {
                     Color = DiscordColor.Red,
                     Description = "Insufficient permissions. You need **Administrator** permission for this command."
-                });
+                }, true);
                 return;
             }
 
@@ -45,12 +38,13 @@ namespace DiscordBot.SlashCommands
             {
                 bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
             }
-            catch (ServerErrorException)
+            catch
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = "Server Error Exception. Please, try again or contact the developer."
+                    Description = "Could not find myself on the server. Please try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
                 return;
             }
@@ -59,8 +53,9 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = "I don't have access to this channel! Please, check the permissions."
+                    Description = "I don't have access to this channel! Please check the permissions."
                 }));
                 return;
             }
@@ -69,6 +64,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "Maybe I'm not allowed to moderate members. Please check the permissions."
                 }));
@@ -84,6 +80,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "Hmm. It doesn't look like that user is in the server, so I can't time them out."
                 }));
@@ -117,6 +114,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = $"Something went wrong. I may not be allowed to timeout **{member.Username}**! Please check the role hierarchy and permissions."
                 }));
@@ -126,15 +124,16 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to timeout that user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please go to https://t.me/Shawtygoldq and include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to timeout that user!\n\nThis was Discord's response:\n> {ex.Message}\n\nPlease try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
-                Logger.Error(ex.ToString());
                 return;
             }
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
             {
+                Title = "Complete",
                 Color = DiscordColor.Green,
                 Description = $"**{member.Username}** sent to think about their behavior for {times[(int)time]}! Reason: {reason}"
             }));

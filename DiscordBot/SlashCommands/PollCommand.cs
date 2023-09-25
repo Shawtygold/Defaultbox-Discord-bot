@@ -5,7 +5,6 @@ using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity.EventHandling;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
 using System.Collections.ObjectModel;
 
 namespace DiscordBot.SlashCommands
@@ -15,7 +14,8 @@ namespace DiscordBot.SlashCommands
         #region [Poll]
 
         [SlashCommand("poll", "Create poll.")]
-        public static async Task Poll(InteractionContext ctx, [Option("question", "Poll question.")] string title, [Option("answers", "Answer options.")] string answers,
+        public static async Task Poll(InteractionContext ctx,
+            [Option("question", "Poll question.")] string question, 
             [Choice("5 мин", 5)]
             [Choice("15 мин", 15)]
             [Choice("30 мин", 30)]
@@ -23,7 +23,30 @@ namespace DiscordBot.SlashCommands
             [Choice("2 часа", 120)]
             [Choice("1 день", 1440)]
             [Option("polling_time", "Polling time.") ] long pollTime,
-            [Option("separator", "Separator.")] string separator = "|")
+            [Option("choice_a", "answer option1")] string? choiceA = null,
+            [Option("choice_b", "answer option2")] string? choiceB = null,
+            [Option("choice_c", "answer option3")] string? choiceC = null,
+            [Option("choice_d", "answer option4")] string? choiceD = null,
+            [Option("choice_e", "answer option5")] string? choiceE = null,
+            [Option("choice_f", "answer option6")] string? choiceF = null,
+            [Option("choice_g", "answer option7")] string? choiceG = null,
+            [Option("choice_h", "answer option8")] string? choiceH = null,
+            [Option("choice_i", "answer option9")] string? choiceI = null,
+            [Option("choice_j", "answer option10")] string? choiceJ = null,
+            [Option("choice_k", "answer option11")] string? choiceK = null,
+            [Option("choice_l", "answer option12")] string? choiceL = null,
+            [Option("choice_m", "answer option13")] string? choiceM = null,
+            [Option("choice_n", "answer option14")] string? choiceN = null,
+            [Option("choice_o", "answer option15")] string? choiceO = null,
+            [Option("choice_p", "answer option16")] string? choiceP = null,
+            [Option("choice_q", "answer option17")] string? choiceQ = null,
+            [Option("choice_r", "answer_option18")] string? choiceR = null,
+            [Option("choice_s", "answer_option19")] string? choiceS = null,
+            [Option("choice_t", "answer_option20")] string? choiceT = null,
+            [Option("choice_u", "answer_option21")] string? choiceU = null,
+            [Option("choice_v", "answer_option22")] string? choiceV = null,
+            [Option("choice_w", "answer_option23")] string? choiceW = null
+            )
         {
             if (!PermissionsManager.CheckPermissionsIn(ctx.Member, ctx.Channel, new() { Permissions.Administrator }) && !ctx.Member.IsOwner)
             {
@@ -31,7 +54,7 @@ namespace DiscordBot.SlashCommands
                 {
                     Color = DiscordColor.Red,
                     Description = "Insufficient permissions. You need **Administrator** permission for this command."
-                });
+                }, true);
                 return;
             }
 
@@ -42,12 +65,13 @@ namespace DiscordBot.SlashCommands
             {
                 bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
             }
-            catch (ServerErrorException)
+            catch
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = "Server Error Exception. Please, try again or contact the developer."
+                    Description = "Could not find myself on the server. Please try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
                 return;
             }
@@ -56,16 +80,18 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "I don't have access to this channel! Please, check the permissions."
                 }));
                 return;
             }
 
-            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.SendMessages, Permissions.AddReactions, Permissions.ReadMessageHistory, Permissions.ManageMessages }))
+            if (!PermissionsManager.CheckPermissionsIn(bot, ctx.Channel, new() { Permissions.SendMessages, Permissions.AddReactions, Permissions.ReadMessageHistory, Permissions.ManageMessages, Permissions.EmbedLinks }))
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "Maybe I'm not allowed to ssend messages, add reactions, read message history or manage messages. Please check the permissions."
                 }));
@@ -74,37 +100,52 @@ namespace DiscordBot.SlashCommands
 
             var interactivity = ctx.Client.GetInteractivity();
 
-            // разделение единой строки на варианты ответов по спец. символу
-            List<string> options = answers.Split(separator).ToList();
-
-            if (options.Count > 9)
+            List<string> notNullChoices = new();
+            List<string?> choices = new() { choiceA, choiceB, choiceC, choiceD, choiceE, choiceF, choiceG, choiceH, choiceI, choiceJ, choiceK, choiceL, choiceM, choiceN, choiceO, choiceP, choiceQ, choiceR, choiceS, choiceT, choiceU, choiceV, choiceW, /*choiceX,*/ /*choiceY, choiceZ*/ };
+            
+            for (int i = 0; i < choices.Count; i++)
             {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                if (choices[i] != null)
                 {
-                    Color = DiscordColor.Red,
-                    Description = "Exception! The number of answer choices is exceeded! Max. number - 9"
-                }));
-                return;
+                    notNullChoices.Add(choices[i]);
+                }
             }
 
             DiscordEmoji[] optionEmojis =
             {
-                DiscordEmoji.FromName(ctx.Client, ":one:"),
-                DiscordEmoji.FromName(ctx.Client, ":two:"),
-                DiscordEmoji.FromName(ctx.Client, ":three:"),
-                DiscordEmoji.FromName(ctx.Client, ":four:"),
-                DiscordEmoji.FromName(ctx.Client, ":five:"),
-                DiscordEmoji.FromName(ctx.Client, ":six:"),
-                DiscordEmoji.FromName(ctx.Client, ":seven:"),
-                DiscordEmoji.FromName(ctx.Client, ":eight:"),
-                DiscordEmoji.FromName(ctx.Client, ":nine:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_a:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_b:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_c:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_d:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_e:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_f:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_g:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_h:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_i:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_j:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_k:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_l:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_m:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_n:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_o:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_p:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_q:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_r:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_s:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_t:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_u:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_v:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_w:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_x:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_y:"),
+                DiscordEmoji.FromName(ctx.Client, ":regional_indicator_z:")
             };
 
             string pollDescription = "";
 
-            for (int i = 0; i < options.Count; i++)
+            for (int i = 0; i < notNullChoices.Count; i++)
             {
-                pollDescription += $"{optionEmojis[i]} | {options[i]}\n";
+                pollDescription += $"{optionEmojis[i]} | {notNullChoices[i]}\n";
             }
 
             DiscordMessage pollMessage;
@@ -114,15 +155,16 @@ namespace DiscordBot.SlashCommands
                 {
                     Color = DiscordColor.Blurple,
                     Description = pollDescription,
-                    Title = title
+                    Title = question
                 }));
             }
             catch (UnauthorizedException)
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = $"Something went wrong. I may not be allowed to send messages! Please check the permissions."
+                    Description = $"Something went wrong. I may not be allowed to send messages or embed links! Please check the permissions."
                 }));
                 return;
             }
@@ -130,17 +172,17 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nPlease try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
-                Logger.Error(ex.ToString());
                 return;
             }
 
             // список с числами, которые характеризуют количество голосов за определенный вариант ответа
             List<int> answerVotes = new();
 
-            for (int i = 0; i < options.Count; i++)
+            for (int i = 0; i < notNullChoices.Count; i++)
             {
                 await pollMessage.CreateReactionAsync(optionEmojis[i]);
 
@@ -172,16 +214,16 @@ namespace DiscordBot.SlashCommands
             
             string resultDescription = "";
 
-            for (int i = 0; i < options.Count; i++)
+            for (int i = 0; i < notNullChoices.Count; i++)
             {
-                resultDescription += $"{optionEmojis[i]} | {options[i]} : {answerVotes[i]} Votes\n";
+                resultDescription += $"{optionEmojis[i]} | {notNullChoices[i]} : {answerVotes[i]} Votes\n";
             }
 
-            resultDescription += $"\nResult: **{options[index]}**";
+            resultDescription += $"\nResult: **{notNullChoices[index]}**";
 
             var resultMessage = new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
             {
-                Title = title,
+                Title = question,
                 Color = DiscordColor.Green,
                 Description = resultDescription,
                 Footer = new() { Text = $"Total votes: {totalVotes}" }
@@ -195,6 +237,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = $"Something went wrong. I may not be allowed to manage messages! Please check the permissions."
                 }));
@@ -205,6 +248,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = $"Something went wrong. Poll message not found!"
                 }));
@@ -214,10 +258,10 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong when trying to delete a poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong when trying to delete a poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nPlease try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
-                Logger.Error(ex.ToString());
                 return;
             }
 
@@ -229,6 +273,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = $"Something went wrong. I may not be allowed to send messages! Please check the permissions."
                 }));
@@ -238,10 +283,10 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to send poll message!\n\nThis was Discord's response:\n> {ex.Message}\n\nPlease try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
-                Logger.Error(ex.ToString());
                 return;
             }
 

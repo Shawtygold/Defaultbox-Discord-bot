@@ -35,15 +35,6 @@ namespace DiscordBot
                 PollBehaviour = PollBehaviour.KeepEmojis
             });
 
-            //Commands = Client.UseCommandsNext(new CommandsNextConfiguration()
-            //{
-            //    EnableDefaultHelp = false,
-            //    StringPrefixes = new string[] { "!" },
-            //    EnableMentionPrefix = true
-            //});
-            //Commands.RegisterCommands<CommandModule>();
-            //Commands.RegisterCommands<RndCommand>();
-
             SlashCommands = Client.UseSlashCommands();
             SlashCommands.RegisterCommands<CreateReactionRolesCommand>();
             SlashCommands.RegisterCommands<PollCommand>();

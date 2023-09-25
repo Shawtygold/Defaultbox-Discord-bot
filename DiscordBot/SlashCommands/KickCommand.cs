@@ -21,7 +21,7 @@ namespace DiscordBot.SlashCommands
                 {
                     Color = DiscordColor.Red,
                     Description = "Insufficient permissions. You need **Administrator** permission for this command."
-                });
+                }, true);
                 return;
             }
 
@@ -32,12 +32,13 @@ namespace DiscordBot.SlashCommands
             {
                 bot = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id);
             }
-            catch (ServerErrorException)
+            catch
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = "Server Error Exception. Please, try again or contact the developer."
+                    Description = "Could not find myself on the server. Please try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
                 return;
             }
@@ -46,8 +47,9 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = "I don't have access to this channel! Please, check the permissions."
+                    Description = "I don't have access to this channel! Please check the permissions."
                 }));
                 return;
             }
@@ -56,6 +58,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "Maybe I'm not allowed to kick members. Please check the permissions."
                 }));
@@ -71,6 +74,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = "Hmm. It doesn't look like this user is on the server, so I can't kick him."
                 }));
@@ -85,6 +89,7 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
                     Description = $"Something went wrong. I may not be allowed to kick **{member.Username}**! Please check the role hierarchy and permissions."
                 }));
@@ -94,15 +99,16 @@ namespace DiscordBot.SlashCommands
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 {
+                    Title = "An error occurred",
                     Color = DiscordColor.Red,
-                    Description = $"Hmm, something went wrong while trying to kick that user!\n\nThis was Discord's response:\n> {ex.Message}\n\nIf you would like to contact the bot owner about this, please include the following debugging information in the message:\n```{ex}\n```"
+                    Description = $"Hmm, something went wrong while trying to kick that user!\n\nThis was Discord's response:\n> {ex.Message}\n\nPlease try again or contact [support team](https://t.me/Shawtygoldq)."
                 }));
-                Logger.Error(ex.ToString());
                 return;
             }
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder() 
             { 
+                Title = "Complete",
                 Color = DiscordColor.Green,
                 Description = $"**{member.Username}** has been kicked from this server. Reason: {reason}"
             }));
