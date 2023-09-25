@@ -14,8 +14,8 @@ namespace DiscordBot.SlashCommands
         public static async Task Ban(InteractionContext ctx,
             [Option("user", "The user to ban.")] DiscordUser userToBan,
             [Option("reason", "The reason for the ban.")][MaximumLength(1500)] string reason = "No reason provided.",
-            [Choice("1 День", 1)]
-            [Choice("1 Неделя", 7)]
+            [Choice("1 day", 1)]
+            [Choice("1 week", 7)]
             [Option("deletedays", "Number of days of message history to delete.")] long deleteDays = 0)
         {
             if(!PermissionsManager.CheckPermissionsIn(ctx.Member, ctx.Channel, new() { Permissions.Administrator }) && !ctx.Member.IsOwner)
