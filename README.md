@@ -1,5 +1,5 @@
-<div align="center"><img src="https://github.com/Shawtygold/Twitch-Notifier/blob/master/TwitchNotifierIcon.png" width="200" height="200"/>
-<h1>Twitch-Notifier Discord Bot</1>
+<div align="center"><img src="https://github.com/Shawtygold/Defaultbox-Discord-bot/blob/master/DiscordBotIcon.png" width="200" height="200"/>
+<h1>Defaultbox Discord Bot</1>
 </div>
 
 ### :pencil: About this project
